@@ -20,17 +20,19 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
     messageDiv.style.color = '#0c5460';
     
     try {
-        // Sign in with Supabase Auth
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email: username + '@example.com', // Using email format for Supabase Auth
-            password: password
-        });
+        // Query users table from Supabase
+        const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('username', username)
+            .single();
         
-        if (error) {
-            throw error;
+        if (error || !data) {
+            throw new Error('Username atau password salah');
         }
         
-        if (data.user) {
+        // Check password (in production, use proper hashing on server)
+        if (data.password === password) {
             messageDiv.className = 'message success';
             messageDiv.textContent = 'Login berhasil! Selamat datang, ' + username + '!';
             messageDiv.style.background = '#d4edda';
@@ -39,13 +41,20 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
             // Clear form
             document.getElementById('loginForm').reset();
             
-            // Store session
-            localStorage.setItem('supabase_session', JSON.stringify(data.session));
+            // Store user session in localStorage
+            const userSession = {
+                username: data.username,
+                email: data.email,
+                loginTime: new Date().toISOString()
+            };
+            localStorage.setItem('user_session', JSON.stringify(userSession));
             
-            // Redirect to dashboard (you can change this URL)
+            // Redirect to dashboard
             setTimeout(() => {
                 window.location.href = 'dashboard.html';
             }, 1500);
+        } else {
+            throw new Error('Username atau password salah');
         }
     } catch (error) {
         messageDiv.className = 'message error';
@@ -67,16 +76,10 @@ document.getElementById('password').addEventListener('input', function() {
 });
 
 // Check if user is already logged in
-window.addEventListener('load', async () => {
-    const session = localStorage.getItem('supabase_session');
+window.addEventListener('load', () => {
+    const session = localStorage.getItem('user_session');
     if (session) {
-        const { data, error } = await supabase.auth.getSession();
-        if (data.session) {
-            // User is already logged in, redirect to dashboard
-            window.location.href = 'dashboard.html';
-        } else {
-            // Session expired, clear storage
-            localStorage.removeItem('supabase_session');
-        }
+        // User is already logged in, redirect to dashboard
+        window.location.href = 'dashboard.html';
     }
 });

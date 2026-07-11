@@ -9,6 +9,7 @@ Website login sederhana yang terhubung dengan Supabase untuk autentikasi, siap d
 - `script.js` - Logika login dengan Supabase
 - `dashboard.html` - Halaman dashboard setelah login
 - `dashboard.js` - Logika dashboard
+- `setup.sql` - SQL script untuk setup tabel users
 
 ## Setup Supabase
 
@@ -19,27 +20,47 @@ Website login sederhana yang terhubung dengan Supabase untuk autentikasi, siap d
 3. Buat project baru
 4. Catat **Project URL** dan **anon/public key**
 
-### 2. Setup Autentikasi di Supabase
+### 2. Setup Database dengan SQL
 
-1. Di dashboard Supabase, buka menu **Authentication**
-2. Buka tab **Providers**
-3. Pastikan **Email** provider aktif
-4. Buka tab **Users** untuk melihat daftar users
+**Cara 1: Menggunakan SQL Editor di Supabase**
+1. Di dashboard Supabase, buka menu **SQL Editor**
+2. Klik **New query**
+3. Copy paste isi file `setup.sql` ke SQL Editor
+4. Klik **Run** untuk menjalankan script
 
-### 3. Buat User di Supabase
+**Cara 2: Manual via Table Editor**
+1. Di dashboard Supabase, buka menu **Table Editor**
+2. Klik **New table**
+3. Buat tabel dengan nama `users`
+4. Tambahkan kolom-kolom berikut:
 
-**Cara 1: Melalui Dashboard**
-1. Buka menu **Authentication** > **Users**
-2. Klik **Add user** > **Create new user**
-3. Masukkan email dan password
-4. Email akan otomatis menjadi format: `username@example.com`
+| Column Name | Type | Default Value | Description |
+|-------------|------|---------------|-------------|
+| id | uuid | gen_random_uuid() | Primary key, auto-generated |
+| username | text | - | Username untuk login |
+| password | text | - | Password (plain text untuk demo) |
+| email | text | - | Email user |
+| created_at | timestamp | now() | Waktu pembuatan |
+
+5. Klik **Save** untuk membuat tabel
+
+### 3. Insert Data User
+
+Setelah tabel dibuat, tambahkan data user:
+
+**Cara 1: Melalui Table Editor**
+1. Klik tabel `users`
+2. Klik **Insert row**
+3. Isi data:
+   - username: `admin`
+   - password: `admin123`
+   - email: `admin@example.com`
+4. Klik **Save**
 
 **Cara 2: Melalui SQL Editor**
 ```sql
--- Contoh: Membuat user dengan email admin@example.com dan password admin123
--- (Password akan di-hash oleh Supabase)
-INSERT INTO auth.users (email, encrypted_password, email_confirmed_at)
-VALUES ('admin@example.com', crypt('admin123', gen_salt('bf')), now());
+INSERT INTO users (username, password, email)
+VALUES ('admin', 'admin123', 'admin@example.com');
 ```
 
 ### 4. Update Konfigurasi di script.js
@@ -97,10 +118,10 @@ git push -u origin main
 
 Setelah setup Supabase dan deploy:
 
-- **Username:** admin (akan menjadi `admin@example.com`)
+- **Username:** admin
 - **Password:** admin123
 
-Atau gunakan kredensial yang Anda buat di Supabase.
+Atau gunakan kredensial yang Anda buat di tabel `users`.
 
 ## Fitur
 
@@ -121,9 +142,10 @@ Atau gunakan kredensial yang Anda buat di Supabase.
 
 ## Catatan Keamanan
 
-- Jangan expose kredensial database di client-side untuk production
-- Gunakan Row Level Security (RLS) di Supabase
-- Aktifkan email confirmation untuk user baru
+- **PENTING:** Password disimpan dalam plain text di tabel (hanya untuk demo)
+- Untuk production, implementasikan hashing password (bcrypt, argon2)
+- Gunakan Row Level Security (RLS) di Supabase untuk melindungi data
+- Jangan expose kredensial sensitif di client-side
 - Implementasi rate limiting jika diperlukan
 - Gunakan HTTPS (sudah included di GitHub Pages)
 

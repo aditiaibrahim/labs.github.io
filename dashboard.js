@@ -6,42 +6,31 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Check authentication on page load
-async function checkAuth() {
-    const { data, error } = await supabase.auth.getSession();
+function checkAuth() {
+    const session = localStorage.getItem('user_session');
     
-    if (error || !data.session) {
+    if (!session) {
         // Not authenticated, redirect to login
         window.location.href = 'index.html';
         return;
     }
     
-    // Display user info
-    const user = data.session.user;
+    // Parse session data
+    const userData = JSON.parse(session);
     const userInfoDiv = document.getElementById('userInfo');
     
-    // Extract username from email (remove @example.com)
-    const username = user.email.replace('@example.com', '');
-    
+    // Display user info
     userInfoDiv.innerHTML = `
-        <p><strong>Username:</strong> ${username}</p>
-        <p><strong>Email:</strong> ${user.email}</p>
-        <p><strong>User ID:</strong> ${user.id}</p>
-        <p><strong>Login Time:</strong> ${new Date(user.last_sign_in_at).toLocaleString('id-ID')}</p>
+        <p><strong>Username:</strong> ${userData.username}</p>
+        <p><strong>Email:</strong> ${userData.email}</p>
+        <p><strong>Login Time:</strong> ${new Date(userData.loginTime).toLocaleString('id-ID')}</p>
     `;
 }
 
 // Handle logout
-document.getElementById('logoutBtn').addEventListener('click', async function() {
-    const { error } = await supabase.auth.signOut();
-    
-    if (error) {
-        console.error('Logout error:', error);
-        alert('Gagal logout: ' + error.message);
-        return;
-    }
-    
+document.getElementById('logoutBtn').addEventListener('click', function() {
     // Clear local storage
-    localStorage.removeItem('supabase_session');
+    localStorage.removeItem('user_session');
     
     // Redirect to login
     window.location.href = 'index.html';
